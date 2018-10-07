@@ -13,6 +13,7 @@ import re
 import json
 from struct import unpack, unpack_from
 import logging
+from xml.etree import ElementTree
 
 SSDP_ADDR = "239.255.255.250"  # The remote host
 SSDP_PORT = 1900    # The same port as used by the server
@@ -89,27 +90,19 @@ class ControlPoint(object):
         """
         Parse the XML device definition file.
         """
-        dd_regex = ('<av:X_ScalarWebAPI_Service>'
-            '\s*'
-            '<av:X_ScalarWebAPI_ServiceType>'
-            '(.+?)'
-            '</av:X_ScalarWebAPI_ServiceType>'
-            '\s*'
-            '<av:X_ScalarWebAPI_ActionList_URL>'
-            '(.+?)'
-            '/sony'                               # and also strip '/sony'
-            '</av:X_ScalarWebAPI_ActionList_URL>'
-            '\s*'
-            '<av:X_ScalarWebAPI_AccessType\s*/>'  # Note: QX10 has 'Type />', HX60 has 'Type/>'
-            '\s*'
-            '</av:X_ScalarWebAPI_Service>')
+        XML_SERVICE_ACTION_URL = "{urn:schemas-sony-com:av}X_ScalarWebAPI_ActionList_URL"
+        XML_SERVICE_TYPE_TAG = "{urn:schemas-sony-com:av}X_ScalarWebAPI_ServiceType"
+        XML_SERVICE_TAG = "{urn:schemas-sony-com:av}X_ScalarWebAPI_Service"
 
-        doc_str = doc.decode('utf8')
+        tree = ElementTree.fromstring(doc)
         services = {}
-        for m in re.findall(dd_regex, doc_str):
-            service_name = m[0]
-            endpoint = m[1]
-            services[service_name] = endpoint
+        for tag in tree.iter(XML_SERVICE_TAG):
+            logger.debug('Service found: %s', tag)
+            service_type = tag.find(XML_SERVICE_TYPE_TAG).text
+            service_url = tag.find(XML_SERVICE_ACTION_URL).text
+            services[service_type] = service_url
+            logger.debug('Service info: %s/%s', service_type, service_url)
+        logger.debug('Device service URLs: %s', services)
         return services
 
     def _read_device_definition(self, url):
