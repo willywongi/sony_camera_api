@@ -31,7 +31,6 @@ logger = logging.getLogger('pysony')
 class ControlPoint(object):
     def __init__(self, source_ip=None):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.settimeout(0.1)
         if source_ip:
             sock.bind((source_ip, 0))
         # Set the socket to broadcast mode.
