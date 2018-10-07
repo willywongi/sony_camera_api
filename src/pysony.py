@@ -29,9 +29,11 @@ logger = logging.getLogger('pysony')
 # Improved with code from 'https://github.com/storborg/sonypy' under MIT license.
 
 class ControlPoint(object):
-    def __init__(self):
+    def __init__(self, source_ip=None):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.settimeout(0.1)
+        if source_ip:
+            sock.bind((source_ip, 0))
         # Set the socket to broadcast mode.
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL , 2)
         self.__udp_socket = sock
